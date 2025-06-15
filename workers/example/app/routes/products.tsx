@@ -98,9 +98,17 @@ export default function Route() {
             }
           >
             {async () => {
-              const response = await fetch(
-                "https://fakestoreapi.com/products?limit=6",
-              );
+              const cacheKey = "https://fakestoreapi.com/products?limit=6";
+              const cache = await caches.open("api-cache");
+
+              let response = await cache.match(cacheKey);
+              if (!response) {
+                response = await fetch(cacheKey);
+                const clonedResponse = response.clone();
+                clonedResponse.headers.set("Cache-Control", "max-age=3600");
+                await cache.put(cacheKey, clonedResponse);
+              }
+
               const productIds = (await response.json()) as Array<{
                 id: number;
               }>;
@@ -127,12 +135,20 @@ export default function Route() {
                   }
                 >
                   {async () => {
-                    await new Promise((resolve) =>
-                      setTimeout(resolve, Math.random() * 4000 + 2000),
-                    );
-                    const response = await fetch(
-                      `https://fakestoreapi.com/products/${productId}`,
-                    );
+                    const cacheKey = `https://fakestoreapi.com/products/${productId}`;
+                    const cache = await caches.open("api-cache");
+
+                    let response = await cache.match(cacheKey);
+                    if (!response) {
+                      response = await fetch(cacheKey);
+                      const clonedResponse = response.clone();
+                      clonedResponse.headers.set(
+                        "Cache-Control",
+                        "max-age=3600",
+                      );
+                      await cache.put(cacheKey, clonedResponse);
+                    }
+
                     const product = (await response.json()) as {
                       id: number;
                       title: string;
@@ -256,8 +272,6 @@ export default function Route() {
             }
           >
             {async () => {
-              await new Promise((resolve) => setTimeout(resolve, 1000));
-
               const reviews = [
                 {
                   id: 1,

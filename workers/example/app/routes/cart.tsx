@@ -99,9 +99,17 @@ export default function Route() {
               }
             >
               {async () => {
-                const response = await fetch(
-                  "https://fakestoreapi.com/products?limit=3",
-                );
+                const cacheKey = "https://fakestoreapi.com/products?limit=3";
+                const cache = await caches.open("api-cache");
+
+                let response = await cache.match(cacheKey);
+                if (!response) {
+                  response = await fetch(cacheKey);
+                  const clonedResponse = response.clone();
+                  clonedResponse.headers.set("Cache-Control", "max-age=3600");
+                  await cache.put(cacheKey, clonedResponse);
+                }
+
                 const products = (await response.json()) as Array<{
                   id: number;
                   title: string;
