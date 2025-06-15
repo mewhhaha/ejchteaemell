@@ -1,3 +1,5 @@
+import type { JSX } from "./jsx.mts";
+
 export const S: unique symbol = Symbol();
 export const N: unique symbol = Symbol();
 
@@ -35,9 +37,21 @@ function toReadableStream(this: Html): ReadableStream<Uint8Array> {
   });
 }
 
-export const into = (text: string | AsyncGenerator<string>): Html => {
+export const into = (
+  text: string | AsyncGenerator<string> | Promise<string | JSX.Element>,
+): Html => {
   let generator: AsyncGenerator<string>;
-  if (typeof text === "string") {
+
+  if (text instanceof Promise) {
+    generator = (async function* (): AsyncGenerator<string> {
+      const res = await text;
+      if (typeof res === "string") {
+        yield res;
+      } else {
+        yield* res.text;
+      }
+    })();
+  } else if (typeof text === "string") {
     generator = (async function* (): AsyncGenerator<string> {
       yield text;
     })();

@@ -1,5 +1,5 @@
 import { type JSX } from "./runtime/jsx.mjs";
-import { into, type Html } from "./runtime/node.mts";
+import { into, isHtml, type Html } from "./runtime/node.mts";
 
 export type { Html } from "./runtime/node.mts";
 export type { JSX } from "./runtime/jsx.mts";
@@ -134,7 +134,11 @@ const routeResponse = async (fragments: fragment[], ctx: ctx) => {
     const Component = mod.default;
     const loaderData = loaders[index];
     const res = Component ? Component({ loaderData, children: acc }) : acc;
-    return typeof res === "string" ? into(res) : (res as Html);
+
+    if (isHtml(res)) {
+      return res;
+    }
+    return into(res);
   }, into(""));
 
   const htmlStream = node.toReadableStream();
