@@ -1,4 +1,5 @@
 import { Suspense } from "@mewhhaha/fx-router/components";
+import { query } from "../utils/query";
 
 export default function Route() {
   return (
@@ -99,16 +100,9 @@ export default function Route() {
               }
             >
               {async () => {
-                const cacheKey = "https://fakestoreapi.com/products?limit=3";
-                const cache = await caches.open("api-cache");
-
-                let response = await cache.match(cacheKey);
-                if (!response) {
-                  response = await fetch(cacheKey);
-                  const clonedResponse = response.clone();
-                  clonedResponse.headers.set("Cache-Control", "max-age=3600");
-                  await cache.put(cacheKey, clonedResponse);
-                }
+                const response = await query(
+                  "https://fakestoreapi.com/products?limit=3",
+                );
 
                 const products = (await response.json()) as Array<{
                   id: number;
