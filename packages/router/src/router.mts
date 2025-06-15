@@ -8,6 +8,8 @@ export const render = (value: Html = into("")): string => {
   return value.toString();
 };
 
+const textEncoder = new TextEncoder();
+
 export interface Env {}
 
 export interface ctx {
@@ -18,7 +20,9 @@ export interface ctx {
 
 export type loader = (params: any) => any;
 export type action = (params: any) => any;
-export type renderer = (props: any) => JSX.Element;
+export type renderer = (
+  props: any,
+) => JSX.Element | Promise<JSX.Element | string>;
 export type headers = (
   params: ctx & {
     loaderData: any | never;
@@ -52,16 +56,16 @@ export const Router = (routes: route[]): router => {
     const urlStr = request.url;
     let fragments: fragment[] | undefined;
     let params: Record<string, string> | undefined;
-    for (const route of routes) {
-      const match = route[0].exec(urlStr);
+    for (const [pattern, frags] of routes) {
+      const match = pattern.exec(urlStr);
       if (match) {
-        fragments = route[1];
+        fragments = frags;
         params = match.pathname.groups;
         break;
       }
     }
     if (!fragments || !params) {
-      return new Response("Not Found", { status: 404 });
+      return new Response(null, { status: 404 });
     }
 
     if (request.headers.has("fx-request")) {
@@ -71,7 +75,7 @@ export const Router = (routes: route[]): router => {
     const ctx = { request, params, context: args };
 
     try {
-      const leaf = fragments.at(-1)?.mod;
+      const leaf = fragments[fragments.length - 1]?.mod;
 
       if (request.method === "GET" && leaf?.default) {
         return await routeResponse(fragments, ctx);
@@ -85,7 +89,7 @@ export const Router = (routes: route[]): router => {
         return await dataResponse(leaf.action, ctx);
       }
 
-      return new Response("Not Found", { status: 404 });
+      return new Response(null, { status: 404 });
     } catch (e) {
       if (e instanceof Response) {
         return e;
@@ -95,7 +99,7 @@ export const Router = (routes: route[]): router => {
         console.error(e.message);
       }
 
-      return new Response("Internal Server Error", { status: 500 });
+      return new Response(null, { status: 500 });
     }
   };
 
@@ -122,24 +126,38 @@ const routeResponse = async (fragments: fragment[], ctx: ctx) => {
   });
   const headers = await mergeFragmentHeaders(init, ctx, fragments, loaders);
 
-  const write = async () => {
-    let html = "<!doctype html>";
-    const node = fragments.reduceRight((curr, next, i) => {
-      const loaderData = loaders[i];
-      const Component = next.mod.default;
-      let t = Component?.({ loaderData, children: curr }) ?? curr;
-      if (typeof t === "string") {
-        return into(t);
+  const stream = new TransformStream();
+  const writer = stream.writable.getWriter();
+
+  const node = fragments.reduceRight((acc, frag, index) => {
+    const { mod } = frag;
+    const Component = mod.default;
+    const loaderData = loaders[index];
+    const res = Component ? Component({ loaderData, children: acc }) : acc;
+    return typeof res === "string" ? into(res) : (res as Html);
+  }, into(""));
+
+  const htmlStream = node.toReadableStream();
+  const reader = htmlStream.getReader();
+
+  const startStreaming = async () => {
+    try {
+      await writer.write(textEncoder.encode("<!doctype html>"));
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        await writer.write(value);
       }
-
-      return t;
-    }, into(""));
-
-    html += render(node);
-    return html;
+    } finally {
+      reader.releaseLock();
+      await writer.close();
+    }
   };
 
-  return new Response(await write(), {
+  ctx.context[1].waitUntil(startStreaming());
+
+  return new Response(stream.readable, {
     headers,
     status: 200,
   });

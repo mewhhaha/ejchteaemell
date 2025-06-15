@@ -176,10 +176,12 @@ import * as r from "./${file.replace(tsRegex, ".js")}";
 
 export type RouteParams = ${paramsObject};
 
-export type ComponentProps = InferComponentProps<typeof r>;
-export type LoaderArgs = InferLoaderArgs<RouteParams>;
-export type ActionArgs = InferActionArgs<RouteParams>;
-export type HeadersFunction = InferHeadersFunction<RouteParams, typeof r>;
+export namespace Route {
+  export type ComponentProps = InferComponentProps<typeof r>;
+  export type LoaderArgs = InferLoaderArgs<RouteParams>;
+  export type ActionArgs = InferActionArgs<RouteParams>;
+  export type HeadersFunction = InferHeadersFunction<RouteParams, typeof r>;
+}
     `.trim();
 
   return template;

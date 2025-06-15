@@ -1,0 +1,87 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# fx-router Project Rules
+
+A concise base-context for contributors and LLMs when improving or extending the codebase. Keep **simplicity**, **vendor-friendliness**, and **runtime performance** as the primary goals.
+
+---
+
+## 1. Target Environment
+
+- Cloudflare Workers (Web-Standard APIs only).
+- ES Modules (`.mts` files).
+- No Node-specific libraries or globals.
+
+## 2. Coding Style
+
+- Prefer simple **for-loops** over `map`/`filter`/`reduce` unless clarity is improved.
+- Prefer **if / else** over ternary expressions.
+- Use browser/standard built-ins (`URLPattern`, `Set`, `URL`, `Request`, `Response`, `Headers`).
+- Keep functions small, composable, and free of unnecessary abstractions.
+- Minimize dependencies to preserve vendor-ability.
+
+## 3. TypeScript Conventions
+
+- Use explicit `type` / `interface` exports for public contracts.
+- Export re-used generics (e.g. `Html`, `JSX`) from a single place.
+- Keep generics simple; avoid deep conditional types.
+- Avoid runtime type checks that duplicate TypeScript's static guarantees.
+
+## 4. Router Architecture (packages/router/src/router.mts)
+
+- A router is created via `Router(routes)` and exposes `handle(request, ...ctx)`.
+- **Route shape:** `[URLPattern, fragments]` where `fragments` is an ordered array of `{ id, mod, params? }`.
+- `handle` iterates through routes **sequentially**; first pattern match wins.
+- `fx-request` header signals hidden navigation ⇒ first fragment is dropped.
+- Context passed to loaders/actions: `{ request, params, context }`.
+- **Leaf resolution logic** (in order):
+  1. `GET` + `default` ⇒ full HTML render.
+  2. `GET` + `loader`   ⇒ JSON/data response.
+  3. Non-GET + `action` ⇒ JSON/data response.
+  4. Otherwise 404.
+- Errors:
+  - A thrown `Response` is returned verbatim.
+  - Any other error logs `e.message` and returns **500**.
+
+## 5. Data & Render Responses
+
+- `dataResponse` wraps non-`Response` results in `Response.json`.
+- `routeResponse`:
+  - Executes **all fragment loaders in parallel** (`Promise.all`).
+  - Merges fragment-level `headers` into a single `Headers` instance (later entries can **append** duplicates).
+  - Builds HTML: reduces fragments **right-to-left**, nesting components around the accumulator.
+  - Prepends `<!doctype html>`; forces `Content-Type: text/html`.
+
+## 6. HTML / JSX Runtime (packages/router/src/runtime/jsx-runtime.mts)
+
+- Lightweight compile-time JSX runtime providing `jsx`, `jsxs`, and `Fragment`.
+- Sanitises attribute values (escapes quotes, filters null/undefined/false).
+- Escapes **& < > " '** in text nodes.
+- Recognises **void elements** to avoid closing tags.
+- Accepts functional components for server-side rendering.
+
+## 7. Performance Notes
+
+- Single pass loops for matching routes and rendering children.
+- Attribute & child sanitisation is iterative—not recursive regex—to reduce allocations.
+- Uses `Set` for O(1) void-element checks.
+- Avoids unnecessary template strings inside loops.
+
+## 8. Security & Correctness
+
+- All HTML text is escaped during render.
+- Attribute values are quote-escaped.
+- Loader/action output must not be trusted implicitly; prefer returning primitives or validated objects.
+
+## 9. Future Improvements – Stay within Guidelines
+
+- Add streaming support via `TransformStream` **only** if it preserves simplicity.
+- Consider memoising `URLPattern` compilation if dynamic routes ever added.
+- Avoid introducing heavy frameworks; keep zero-dependency policy in `runtime`.
+
+---
+
+Follow these rules to maintain the project's ethos: **simple, vendor-able, performant.**

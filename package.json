@@ -1,33 +1,6 @@
 {
-  "name": "@mewhhaha/fx-router",
-  "private": true,
-  "version": "1.0.0",
-  "type": "module",
-  "description": "",
-  "bin": {
-    "fs-routes": "./src/fs-routes/routes.mts"
-  },
-  "exports": {
-    ".": {
-      "import": "./src/router.mts",
-      "types": "./src/router.mts"
-    },
-    "./types": {
-      "import": "./src/types.mts",
-      "types": "./src/types.mts"
-    },
-    "./jsx-runtime": {
-      "import": "./src/runtime/jsx-runtime.mts",
-      "types": "./src/runtime/jsx-runtime.mts"
-    }
-  },
-  "keywords": [],
-  "author": "",
-  "license": "MIT",
+  "packageManager": "pnpm@10.12.1+sha512.f0dda8580f0ee9481c5c79a1d927b9164f2c478e90992ad268bbb2465a736984391d6333d2c327913578b2804af33474ca554ba29c04a8b13060a717675ae3ac",
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250614.0",
-    "@types/node": "^24.0.1",
     "typescript": "^5.8.3"
-  },
-  "packageManager": "pnpm@10.6.1+sha512.40ee09af407fa9fbb5fbfb8e1cb40fbb74c0af0c3e10e9224d7b53c7658528615b2c92450e74cfad91e3a2dcafe3ce4050d80bda71d757756d2ce2b66213e9a3"
+  }
 }

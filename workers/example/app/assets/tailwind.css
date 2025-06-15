@@ -1,0 +1,31 @@
+/** Inter font */
+@import url('https://fonts.googleapis.com/css2?family=Averia+Libre:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=EB+Garamond:ital,wght@0,400..800;1,400..800&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+@import 'tailwindcss';
+
+@theme {
+	--font-sans: 'Averia Libre', 'Inter', 'sans-serif';
+	--font-serif: 'EB Garamond', 'serif';
+}
+
+@custom-variant aria-current-page (&[aria-current="page"]);
+
+@custom-variant override (&:where(*));
+
+@utility view-name-* {
+	view-transition-name: --value([ *]);
+}
+
+html,
+body {
+	width: 100dvw;
+	height: 100dvh;
+}
+
+html *:focus-visible {
+	outline: 2px solid color-mix(in oklab, var(--color-blue-300) 80%, transparent);
+	outline-offset: 4px;
+}
+
+@view-transition {
+	navigation: auto;
+}

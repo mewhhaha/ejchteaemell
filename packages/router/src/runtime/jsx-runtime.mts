@@ -53,47 +53,48 @@ export function jsx(
     attrs += ` ${key}="${sanitized}" `;
   }
 
-  const f = (): Html => {
-    let html = "";
+  const generator = async function* (): AsyncGenerator<string> {
     if (tag) {
-      html += `<${tag}${attrs}>`;
+      yield `<${tag}${attrs}>`;
     }
 
-    const rec = (child: unknown) => {
+    async function* processChild(child: unknown): AsyncGenerator<string> {
       if (child === undefined || child === null || child === false) {
         return;
       }
+      if (child instanceof Promise) {
+        const resolved = await child;
+        yield* processChild(resolved);
+        return;
+      }
       if (isHtml(child)) {
-        html += child.text;
+        yield* child.text;
         return;
       }
       if (Array.isArray(child)) {
         for (let i = 0; i < child.length; i++) {
           const c = child[i];
-
-          rec(c);
+          yield* processChild(c);
         }
         return;
       }
 
       if (typeof child === "function") {
-        rec(child());
+        yield* processChild(child());
         return;
       }
 
-      html += escapeHtml(child.toString());
-    };
-
-    rec(children);
-
-    if (tag && !voidElements.has(tag)) {
-      html += `</${tag}>`;
+      yield escapeHtml(child.toString());
     }
 
-    return into(html);
+    yield* processChild(children);
+
+    if (tag && !voidElements.has(tag)) {
+      yield `</${tag}>`;
+    }
   };
 
-  return f();
+  return into(generator());
 }
 
 export function escapeHtml(input: string): string {
@@ -124,7 +125,7 @@ const sanitize = (value: any) => {
   }
 
   if (value === true) {
-    return "";
+    return "true";
   }
 
   if (typeof value === "number") {

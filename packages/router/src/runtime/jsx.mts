@@ -1,8 +1,97 @@
 import type { Html } from "./node.mts";
 
 export namespace JSX {
+  interface AriaAttributes {
+    // ARIA attributes
+    "aria-activedescendant"?: string | undefined;
+    "aria-atomic"?: boolean | "false" | "true" | undefined;
+    "aria-autocomplete"?: "none" | "inline" | "list" | "both" | undefined;
+    "aria-busy"?: boolean | "false" | "true" | undefined;
+    "aria-checked"?: boolean | "false" | "mixed" | "true" | undefined;
+    "aria-colcount"?: number | undefined;
+    "aria-colindex"?: number | undefined;
+    "aria-colspan"?: number | undefined;
+    "aria-controls"?: string | undefined;
+    "aria-current"?:
+      | boolean
+      | "false"
+      | "true"
+      | "page"
+      | "step"
+      | "location"
+      | "date"
+      | "time"
+      | undefined;
+    "aria-describedby"?: string | undefined;
+    "aria-details"?: string | undefined;
+    "aria-disabled"?: boolean | "false" | "true" | undefined;
+    "aria-dropeffect"?:
+      | "none"
+      | "copy"
+      | "execute"
+      | "link"
+      | "move"
+      | "popup"
+      | undefined; // deprecated
+    "aria-errormessage"?: string | undefined;
+    "aria-expanded"?: boolean | "false" | "true" | undefined;
+    "aria-flowto"?: string | undefined;
+    "aria-grabbed"?: boolean | "false" | "true" | undefined; // deprecated
+    "aria-haspopup"?:
+      | boolean
+      | "false"
+      | "true"
+      | "menu"
+      | "listbox"
+      | "tree"
+      | "grid"
+      | "dialog"
+      | undefined;
+    "aria-hidden"?: boolean | "false" | "true" | undefined;
+    "aria-invalid"?:
+      | boolean
+      | "false"
+      | "true"
+      | "grammar"
+      | "spelling"
+      | undefined;
+    "aria-keyshortcuts"?: string | undefined;
+    "aria-label"?: string | undefined;
+    "aria-labelledby"?: string | undefined;
+    "aria-level"?: number | undefined;
+    "aria-live"?: "off" | "assertive" | "polite" | undefined;
+    "aria-modal"?: boolean | "false" | "true" | undefined;
+    "aria-multiline"?: boolean | "false" | "true" | undefined;
+    "aria-multiselectable"?: boolean | "false" | "true" | undefined;
+    "aria-orientation"?: "horizontal" | "vertical" | undefined;
+    "aria-owns"?: string | undefined;
+    "aria-placeholder"?: string | undefined;
+    "aria-posinset"?: number | undefined;
+    "aria-pressed"?: boolean | "false" | "mixed" | "true" | undefined;
+    "aria-readonly"?: boolean | "false" | "true" | undefined;
+    "aria-relevant"?:
+      | "additions"
+      | "additions text"
+      | "all"
+      | "removals"
+      | "text"
+      | undefined;
+    "aria-required"?: boolean | "false" | "true" | undefined;
+    "aria-roledescription"?: string | undefined;
+    "aria-rowcount"?: number | undefined;
+    "aria-rowindex"?: number | undefined;
+    "aria-rowspan"?: number | undefined;
+    "aria-selected"?: boolean | "false" | "true" | undefined;
+    "aria-setsize"?: number | undefined;
+    "aria-sort"?: "none" | "ascending" | "descending" | "other" | undefined;
+    "aria-valuemax"?: number | undefined;
+    "aria-valuemin"?: number | undefined;
+    "aria-valuenow"?: number | undefined;
+    "aria-valuetext"?: string | undefined;
+  }
+
   // typed-html
-  export interface HtmlTag extends FixiAttributes {}
+  export interface HtmlTag extends FixiAttributes, AriaAttributes {}
   export interface HtmlBodyTag {
     onAfterprint?: undefined | string;
     onBeforeprint?: undefined | string;
@@ -99,7 +188,8 @@ export namespace JSX {
     contenteditable?: string | undefined;
     dir?: string | undefined;
     hidden?: string | boolean | undefined;
-    popover?: boolean | undefined;
+    inert?: string | boolean | undefined;
+    popover?: "auto" | "hint" | "manual";
     popovertarget?: string | undefined;
     popoveraction?: "close" | "open" | "toggle" | (string & {}) | undefined;
     id?: string | undefined;
@@ -473,11 +563,12 @@ export namespace JSX {
     d?: string | undefined;
   }
 
-  export type Element = Html;
+  export type Element = Html | Promise<Html>;
 
   export type HtmlNode =
     | Element
     | string
+    | number
     | null
     | undefined
     | false

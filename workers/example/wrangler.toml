@@ -1,0 +1,8 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "justaiit"
+main = "./worker/main.ts"
+compatibility_flags = ["nodejs_compat", "nodejs_als"]
+compatibility_date = "2025-06-15"
+
+[observability.logs]
+enabled = true
