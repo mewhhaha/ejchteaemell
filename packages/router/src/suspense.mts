@@ -27,32 +27,35 @@ export const Suspense = ({
 type ResolveProps = {
   nonce?: string;
 };
+
 export const Resolve = ({ nonce }: ResolveProps): JSX.Element => {
-  const templateId = crypto.randomUUID();
-  const scriptId = crypto.randomUUID();
-
-  const nonceAttribute = nonce ? ` nonce="${nonce}"` : "";
-
   return into(
     (async function* () {
+      const nonceAttribute = nonce ? ` nonce="${nonce}"` : "";
+      yield* `
+<script type="application/javascript"${nonceAttribute}>
+window.__resolve = (templateId, targetId) => {
+  const target = document.getElementById(targetId);
+  const template = document.getElementById(templateId);
+  if (template && target) {
+    target.replaceWith(template.querySelector("template").content.cloneNode(true));
+  }
+  template?.remove();
+};
+</script>
+`;
+
       while (suspended.size > 0) {
+        const templateId = crypto.randomUUID();
         const [id, element] = await Promise.race(suspended.values());
         suspended.delete(id);
-        yield* `<template id="${templateId}">${element}</template>`;
         yield* `
-<script id="${scriptId}" type="application/javascript"${nonceAttribute}>
-(() => {
-const template = document.getElementById("${templateId}");
-const target = document.getElementById("${id}");
-if (template) {
-    target.replaceWith(template.content.cloneNode(true));
-}
-
-document.getElementById("${scriptId}").remove();
-document.getElementById("${templateId}").remove();
-})()
-
-</script>`.trim();
+<resolved-data id="${templateId}">
+<template>${element}</template>
+<script type="application/javascript"${nonceAttribute}>
+    window.__resolve("${templateId}", "${id}");
+</script>
+</resolved-data>`;
       }
     })(),
   );

@@ -30,6 +30,9 @@ const routes = (appFolder: string): PluginOption => {
 };
 
 export default defineConfig({
+  css: {
+    modules: false,
+  },
   plugins: [
     cloudflare({ viteEnvironment: { name: "ssr" } }),
     tailwindcss(),

@@ -98,11 +98,9 @@
     if (n.querySelectorAll) n.querySelectorAll("[fx-action]").forEach(init);
   };
   document.addEventListener("fx:process", (evt) => process(evt.target));
-  document.addEventListener("DOMContentLoaded", () => {
-    document.__fixi_mo.observe(document.documentElement, {
-      childList: true,
-      subtree: true,
-    });
-    process(document.body);
+  document.__fixi_mo.observe(document.documentElement, {
+    childList: true,
+    subtree: true,
   });
+  process(document.body);
 })();

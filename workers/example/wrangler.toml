@@ -1,5 +1,5 @@
 #:schema node_modules/wrangler/config-schema.json
-name = "justaiit"
+name = "testing-suspense"
 main = "./worker/main.ts"
 compatibility_flags = ["nodejs_compat", "nodejs_als"]
 compatibility_date = "2025-06-15"

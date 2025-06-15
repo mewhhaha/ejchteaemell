@@ -84,7 +84,7 @@ export default function Route() {
           <Suspense
             fallback={
               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[1, 2, 3].map(() => (
+                {[1, 2, 3, 4, 5, 6].map(() => (
                   <div class="bg-white rounded-xl shadow-md overflow-hidden animate-pulse">
                     <div class="h-64 bg-slate-200"></div>
                     <div class="p-6">
@@ -101,71 +101,59 @@ export default function Route() {
               const response = await fetch(
                 "https://fakestoreapi.com/products?limit=6",
               );
-              const products = (await response.json()) as Array<{
+              const productIds = (await response.json()) as Array<{
                 id: number;
-                title: string;
-                price: number;
-                description: string;
-                category: string;
-                image: string;
-                rating: { rate: number; count: number };
               }>;
 
-              return (
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {products.map((product) => (
-                    <div class="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group">
-                      <div class="relative h-64 overflow-hidden">
-                        <img
-                          src={product.image}
-                          alt={product.title}
-                          class="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300"
-                        />
-                        <div class="absolute top-3 right-3 bg-white rounded-full p-2 shadow-md opacity-0 group-hover:opacity-100 transition-opacity">
-                          <svg
-                            class="w-5 h-5 text-slate-600"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                            />
-                          </svg>
-                        </div>
-                      </div>
+              const ProductCard = ({ productId }: { productId: number }) => (
+                <Suspense
+                  fallback={
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden animate-pulse">
+                      <div class="h-64 bg-slate-200"></div>
                       <div class="p-6">
                         <div class="flex items-center justify-between mb-2">
-                          <span class="text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
-                            {product.category}
-                          </span>
-                          <div class="flex items-center text-sm text-slate-500">
-                            <svg
-                              class="w-4 h-4 text-yellow-400 mr-1"
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
-                            >
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                            {product.rating.rate} ({product.rating.count})
-                          </div>
+                          <div class="h-6 bg-slate-200 rounded-full w-20"></div>
+                          <div class="h-4 bg-slate-200 rounded w-16"></div>
                         </div>
-                        <h3 class="text-lg font-semibold text-slate-900 mb-2 line-clamp-2">
-                          {product.title}
-                        </h3>
-                        <p class="text-slate-600 text-sm mb-4 line-clamp-2">
-                          {product.description}
-                        </p>
+                        <div class="h-5 bg-slate-200 rounded mb-2"></div>
+                        <div class="h-4 bg-slate-200 rounded w-3/4 mb-2"></div>
+                        <div class="h-4 bg-slate-200 rounded w-1/2 mb-4"></div>
                         <div class="flex items-center justify-between">
-                          <span class="text-2xl font-bold text-slate-900">
-                            ${product.price}
-                          </span>
-                          <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2">
+                          <div class="h-8 bg-slate-200 rounded w-20"></div>
+                          <div class="h-10 bg-slate-200 rounded w-32"></div>
+                        </div>
+                      </div>
+                    </div>
+                  }
+                >
+                  {async () => {
+                    await new Promise((resolve) =>
+                      setTimeout(resolve, Math.random() * 4000 + 2000),
+                    );
+                    const response = await fetch(
+                      `https://fakestoreapi.com/products/${productId}`,
+                    );
+                    const product = (await response.json()) as {
+                      id: number;
+                      title: string;
+                      price: number;
+                      description: string;
+                      category: string;
+                      image: string;
+                      rating: { rate: number; count: number };
+                    };
+
+                    return (
+                      <div class="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden group">
+                        <div class="relative h-64 overflow-hidden">
+                          <img
+                            src={product.image}
+                            alt={product.title}
+                            class="w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300"
+                          />
+                          <div class="absolute top-3 right-3 bg-white rounded-full p-2 shadow-md opacity-0 group-hover:opacity-100 transition-opacity">
                             <svg
-                              class="w-4 h-4"
+                              class="w-5 h-5 text-slate-600"
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -174,14 +162,65 @@ export default function Route() {
                                 stroke-linecap="round"
                                 stroke-linejoin="round"
                                 stroke-width="2"
-                                d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.1 5H19M7 13v8a2 2 0 002 2h8a2 2 0 002-2v-8"
+                                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
                               />
                             </svg>
-                            <span>Add to Cart</span>
-                          </button>
+                          </div>
+                        </div>
+                        <div class="p-6">
+                          <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+                              {product.category}
+                            </span>
+                            <div class="flex items-center text-sm text-slate-500">
+                              <svg
+                                class="w-4 h-4 text-yellow-400 mr-1"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                              </svg>
+                              {product.rating.rate} ({product.rating.count})
+                            </div>
+                          </div>
+                          <h3 class="text-lg font-semibold text-slate-900 mb-2 line-clamp-2">
+                            {product.title}
+                          </h3>
+                          <p class="text-slate-600 text-sm mb-4 line-clamp-2">
+                            {product.description}
+                          </p>
+                          <div class="flex items-center justify-between">
+                            <span class="text-2xl font-bold text-slate-900">
+                              ${product.price}
+                            </span>
+                            <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2">
+                              <svg
+                                class="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  stroke-width="2"
+                                  d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.1 5H19M7 13v8a2 2 0 002 2h8a2 2 0 002-2v-8"
+                                />
+                              </svg>
+                              <span>Add to Cart</span>
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    );
+                  }}
+                </Suspense>
+              );
+
+              return (
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {productIds.map((product) => (
+                    <ProductCard productId={product.id} />
                   ))}
                 </div>
               );

@@ -4,6 +4,7 @@
     "composite": true,
     "target": "ESNext",
     "lib": ["ESNext", "DOM", "DOM.Iterable", "DOM.AsyncIterable"],
+    "types": ["vite/client"],
     "jsx": "react-jsx",
     "jsxImportSource": "@mewhhaha/fx-router",
     "allowImportingTsExtensions": true,
