@@ -61,7 +61,7 @@ export const Router = (routes: route[]): router => {
       }
     }
     if (!fragments || !params) {
-      return new Response(null, { status: 404 });
+      return new Response("Not Found", { status: 404 });
     }
 
     if (request.headers.has("fx-request")) {
@@ -85,7 +85,7 @@ export const Router = (routes: route[]): router => {
         return await dataResponse(leaf.action, ctx);
       }
 
-      return new Response(null, { status: 404 });
+      return new Response("Not Found", { status: 404 });
     } catch (e) {
       if (e instanceof Response) {
         return e;
@@ -95,7 +95,7 @@ export const Router = (routes: route[]): router => {
         console.error(e.message);
       }
 
-      return new Response(null, { status: 500 });
+      return new Response("Internal Server Error", { status: 500 });
     }
   };
 
