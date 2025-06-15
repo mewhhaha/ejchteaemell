@@ -2,6 +2,7 @@ import { Resolve } from "@mewhhaha/fx-router/components";
 import type { Route as t } from "./+types.document";
 
 const fixiUrl = new URL("./assets/fixi.js", import.meta.url);
+const extFixiUrl = new URL("./assets/ext-fixi.mjs", import.meta.url);
 
 const stylesUrl = new URL("./assets/tailwind.css", import.meta.url);
 const iconUrl = new URL("./assets/favicon.ico", import.meta.url);
@@ -25,6 +26,7 @@ export default function Document({ children }: t.ComponentProps) {
         />
         <link rel="stylesheet" href={stylesUrl.pathname} />
         <script src={fixiUrl.pathname}></script>
+        <script type="module" src={extFixiUrl.pathname}></script>
       </head>
       <body>
         {children}
