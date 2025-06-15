@@ -1,10 +1,10 @@
+import { Resolve } from "@mewhhaha/fx-router/components";
 import type { Route as t } from "./+types.document";
 
 const fixiUrl = new URL("./assets/fixi.js", import.meta.url);
 
 const stylesUrl = new URL("./assets/tailwind.css", import.meta.url);
 const iconUrl = new URL("./assets/favicon.ico", import.meta.url);
-const cmdUrl = new URL("./assets/cmd.js", import.meta.url);
 
 export default function Document({ children }: t.ComponentProps) {
   return (
@@ -24,10 +24,12 @@ export default function Document({ children }: t.ComponentProps) {
           crossorigin=""
         />
         <link rel="stylesheet" href={stylesUrl.pathname} />
-        <script src={fixiUrl.pathname} defer></script>
-        <script src={cmdUrl.pathname} defer></script>
+        <script src={fixiUrl.pathname}></script>
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <Resolve />
+      </body>
     </html>
   );
 }

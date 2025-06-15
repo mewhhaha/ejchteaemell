@@ -12,6 +12,10 @@
       "import": "./src/router.mts",
       "types": "./src/router.mts"
     },
+    "./components": {
+      "import": "./src/suspense.mts",
+      "types": "./src/suspense.mts"
+    },
     "./fs-routes": {
       "import": "./src/fs-routes/js.mts",
       "types": "./src/fs-routes/js.mts"

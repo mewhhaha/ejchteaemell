@@ -8,8 +8,6 @@ export const render = (value: Html = into("")): string => {
   return value.toString();
 };
 
-const textEncoder = new TextEncoder();
-
 export interface Env {}
 
 export interface ctx {
@@ -146,6 +144,7 @@ const routeResponse = async (fragments: fragment[], ctx: ctx) => {
 
   const startStreaming = async () => {
     try {
+      const textEncoder = new TextEncoder();
       await writer.write(textEncoder.encode("<!doctype html>"));
 
       while (true) {
