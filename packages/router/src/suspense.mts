@@ -34,14 +34,23 @@ export const Resolve = ({ nonce }: ResolveProps): JSX.Element => {
       const nonceAttribute = nonce ? ` nonce="${nonce}"` : "";
       yield* `
 <script type="application/javascript"${nonceAttribute}>
-window.__resolve = (templateId, targetId) => {
-  const target = document.getElementById(targetId);
-  const template = document.getElementById(templateId);
-  if (template && target) {
-    target.replaceWith(template.querySelector("template").content.cloneNode(true));
+
+class ResolvedData extends HTMLElement {
+  connectedCallback() {
+    const templateId = this.getAttribute('from');
+    const targetId = this.getAttribute('to');
+    const template = document.getElementById(templateId);
+    const target = document.getElementById(targetId);
+    if (template instanceof HTMLTemplateElement && target instanceof HTMLElement) {
+      target.replaceWith(template.content.cloneNode(true));
+    }
+ 
+    this.remove();
+    template?.remove();
   }
-  template?.remove();
-};
+}
+
+customElements.define('resolved-data', ResolvedData);
 </script>
 `;
 
@@ -50,11 +59,8 @@ window.__resolve = (templateId, targetId) => {
         const [id, element] = await Promise.race(suspended.values());
         suspended.delete(id);
         yield* `
-<resolved-data id="${templateId}">
-<template>${element}</template>
-<script type="application/javascript"${nonceAttribute}>
-    window.__resolve("${templateId}", "${id}");
-</script>
+<template id="${templateId}">${element}</template>
+<resolved-data to="${id}" from="${templateId}">
 </resolved-data>`;
       }
     })(),

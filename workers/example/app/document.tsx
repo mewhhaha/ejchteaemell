@@ -1,7 +1,7 @@
 import { Resolve } from "@mewhhaha/fx-router/components";
 import type { Route as t } from "./+types.document";
 import stylesUrl from "./assets/tailwind.css?url";
-import fixiUrl from "./assets/fixi.js?url";
+import fixiUrl from "./assets/fixi.js?url&no-inline";
 import iconUrl from "./assets/favicon.ico?url";
 
 export default function Document({ children }: t.ComponentProps) {
@@ -22,9 +22,9 @@ export default function Document({ children }: t.ComponentProps) {
           crossorigin=""
         />
         <link rel="stylesheet" href={stylesUrl} />
+        <script async type="module" src={fixiUrl}></script>
       </head>
       <body>
-        <script src={fixiUrl}></script>
         {children}
         <Resolve />
       </body>
