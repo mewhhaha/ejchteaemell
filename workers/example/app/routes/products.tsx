@@ -31,6 +31,12 @@ export default function Route() {
               >
                 Account
               </a>
+              <a
+                href="/test"
+                class="text-slate-700 hover:text-blue-600 font-medium transition-colors"
+              >
+                Test
+              </a>
             </nav>
             <div class="flex items-center space-x-4">
               <button class="p-2 text-slate-600 hover:text-blue-600 transition-colors">

@@ -28,6 +28,7 @@ type ResolveProps = {
   nonce?: string;
 };
 
+/** Where the templates and the custom elements for swapping the content are defined. */
 export const Resolve = ({ nonce }: ResolveProps): JSX.Element => {
   return into(
     (async function* () {
@@ -66,3 +67,4 @@ customElements.define('resolved-data', ResolvedData);
     })(),
   );
 };
+
