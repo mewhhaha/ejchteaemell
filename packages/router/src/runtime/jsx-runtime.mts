@@ -1,6 +1,7 @@
 import { into, isHtml, type Html } from "./node.mts";
 import "./typed.mts";
 import type { JSX } from "./typed.mts";
+import { isSignal, type Signal } from "../signals.mts";
 export type * from "./typed.mts";
 export { type JSX } from "./jsx.mts";
 
@@ -33,8 +34,15 @@ export function jsx(
   }
 
   let attrs = "";
+  const signalBindings: Array<{ key: string; signal: Signal<any> }> = [];
+  
   for (const key in props) {
     let value = props[key];
+
+    if (isSignal(value)) {
+      signalBindings.push({ key, signal: value });
+      value = value.get();
+    }
 
     let sanitized = sanitize(value);
     if (sanitized === undefined) {
@@ -52,6 +60,16 @@ export function jsx(
 
     attrs += ` ${key}="${sanitized}" `;
   }
+  
+  // Add signal binding attributes
+  if (signalBindings.length > 0) {
+    for (const { key, signal } of signalBindings) {
+      attrs += ` data-signal-id="${signal.id}"`;
+      attrs += ` data-signal-type="attr"`;
+      attrs += ` data-signal-property="${key}"`;
+      attrs += ` data-signal-value="${escapeHtml(JSON.stringify(signal.get()))}"`;
+    }
+  }
 
   const generator = async function* (): AsyncGenerator<string> {
     if (tag) {
@@ -65,6 +83,11 @@ export function jsx(
       if (child instanceof Promise) {
         const resolved = await child;
         yield* processChild(resolved);
+        return;
+      }
+      if (isSignal(child)) {
+        const signal = child as Signal<any>;
+        yield `<span data-signal-id="${signal.id}" data-signal-type="text" data-signal-value="${escapeHtml(JSON.stringify(signal.get()))}">${escapeHtml(signal.get().toString())}</span>`;
         return;
       }
       if (isHtml(child)) {

@@ -31,6 +31,22 @@
     "./jsx-dev-runtime": {
       "import": "./src/runtime/jsx-dev-runtime.mts",
       "types": "./src/runtime/jsx-dev-runtime.mts"
+    },
+    "./signals": {
+      "import": "./src/signals.mts",
+      "types": "./src/signals.mts"
+    },
+    "./signal-helpers": {
+      "import": "./src/signal-helpers.mts",
+      "types": "./src/signal-helpers.mts"
+    },
+    "./signals-document": {
+      "import": "./src/signals-document.mts",
+      "types": "./src/signals-document.mts"
+    },
+    "./example": {
+      "import": "./src/example.mts",
+      "types": "./src/example.mts"
     }
   },
   "keywords": [],
