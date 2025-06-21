@@ -55,6 +55,18 @@
     "./signals/components": {
       "import": "./src/signal-components.mts",
       "types": "./src/signal-components.mts"
+    },
+    "./signals/functions": {
+      "import": "./src/runtime/jsx-functions.mts",
+      "types": "./src/runtime/jsx-functions.mts"
+    },
+    "./signals/complete": {
+      "import": "./src/client-complete.mts",
+      "types": "./src/client-complete.mts"
+    },
+    "./function-serializer": {
+      "import": "./src/function-serializer.mts",
+      "types": "./src/function-serializer.mts"
     }
   },
   "keywords": [],

@@ -1,4 +1,5 @@
 import type { JSX as BaseJSX } from "./jsx.mts";
+import type { SerializableFunction } from "../function-serializer.mts";
 
 declare global {
   namespace JSX {
@@ -27,6 +28,22 @@ declare global {
         className?: string;
         style?: string;
         [key: string]: any;
+      };
+      // Override event handlers to accept SerializableFunction
+      button: BaseJSX.IntrinsicElements['button'] & {
+        onClick?: string | SerializableFunction;
+        onInput?: string | SerializableFunction;
+        onChange?: string | SerializableFunction;
+      };
+      input: BaseJSX.IntrinsicElements['input'] & {
+        onClick?: string | SerializableFunction;
+        onInput?: string | SerializableFunction;
+        onChange?: string | SerializableFunction;
+      };
+      div: BaseJSX.IntrinsicElements['div'] & {
+        onClick?: string | SerializableFunction;
+        onInput?: string | SerializableFunction;
+        onChange?: string | SerializableFunction;
       };
     }
   }
