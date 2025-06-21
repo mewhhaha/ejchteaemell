@@ -31,6 +31,10 @@
     "./jsx-dev-runtime": {
       "import": "./src/runtime/jsx-dev-runtime.mts",
       "types": "./src/runtime/jsx-dev-runtime.mts"
+    },
+    "./signals": {
+      "import": "./src/signals/index.mts",
+      "types": "./src/signals/index.mts"
     }
   },
   "keywords": [],
