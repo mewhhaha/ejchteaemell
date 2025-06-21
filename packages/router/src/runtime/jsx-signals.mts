@@ -1,6 +1,8 @@
 import { jsx as originalJsx, escapeHtml } from "./jsx-runtime.mts";
 import { into, type Html } from "./node.mts";
 import { isSignal, signalRef, type Signal, type SignalValue } from "../signals.mts";
+import "./jsx-signals-types.mts";
+export type { JSX } from "./jsx-signals-types.mts";
 
 const signalElements = new Set<string>();
 

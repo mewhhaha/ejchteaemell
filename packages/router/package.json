@@ -31,6 +31,30 @@
     "./jsx-dev-runtime": {
       "import": "./src/runtime/jsx-dev-runtime.mts",
       "types": "./src/runtime/jsx-dev-runtime.mts"
+    },
+    "./signals": {
+      "import": "./src/signals.mts",
+      "types": "./src/signals.mts"
+    },
+    "./signals/jsx-runtime": {
+      "import": "./src/runtime/jsx-signals.mts",
+      "types": "./src/runtime/jsx-signals.mts"
+    },
+    "./signals/jsx-dev-runtime": {
+      "import": "./src/runtime/jsx-signals.mts",
+      "types": "./src/runtime/jsx-signals.mts"
+    },
+    "./signals/jsx-types": {
+      "import": "./src/runtime/jsx-signals-types.mts",
+      "types": "./src/runtime/jsx-signals-types.mts"
+    },
+    "./signals/client": {
+      "import": "./src/client-signals.mts",
+      "types": "./src/client-signals.mts"
+    },
+    "./signals/components": {
+      "import": "./src/signal-components.mts",
+      "types": "./src/signal-components.mts"
     }
   },
   "keywords": [],
