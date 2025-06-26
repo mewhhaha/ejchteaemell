@@ -1,23 +1,30 @@
 import { test, expect } from "vitest";
 import { type JSX } from "../runtime/jsx-runtime.mts";
 import { userEvent } from "@testing-library/user-event";
-import { getByRole } from "@testing-library/dom";
+import { screen } from "@testing-library/dom";
 import { useSignal } from "./signal.ts";
+import { beforeEach } from "node:test";
 
 const render = async (element: JSX.Element) => {
-  return await (element instanceof Promise
+  const e = await (element instanceof Promise
     ? await element
     : element
   ).toPromise();
+  document.body.innerHTML = e;
+  return e;
 };
+
+beforeEach(() => {
+  document.body.innerHTML = "";
+});
 
 test("renders jsx", async () => {
   function App() {
     return <div>Hello World</div>;
   }
 
-  const element = await render(<App />);
-  expect(element).toBe("<div>Hello World</div>");
+  await render(<App />);
+  screen.getByText("Hello World");
 });
 
 test("render button with onclick", async () => {
@@ -36,9 +43,11 @@ test("render button with onclick", async () => {
       </div>
     );
   }
-  const element = await render(<Component />);
+
+  await render(<Component />);
 
   const user = userEvent.setup();
 
-  await user.click(getByRole(element, "button"));
+  await user.click(screen.getByRole("button"));
+  expect(screen.getByRole("status")).toHaveTextContent("1");
 });

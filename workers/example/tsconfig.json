@@ -1,37 +1,37 @@
 {
-  "compilerOptions": {
-    "tsBuildInfoFile": "node_modules/.cache/tsbuildinfo.server.json",
-    "composite": true,
-    "target": "ESNext",
-    "lib": ["ESNext", "DOM", "DOM.Iterable", "DOM.AsyncIterable"],
-    "types": ["vite/client"],
-    "jsx": "react-jsx",
-    "jsxImportSource": "@mewhhaha/fx-router",
-    "allowImportingTsExtensions": true,
-    "module": "ESNext",
-    "esModuleInterop": true,
-    "verbatimModuleSyntax": true,
-    "moduleResolution": "Bundler",
-    "exactOptionalPropertyTypes": true,
-    "resolveJsonModule": true,
-    "allowJs": true,
-    "checkJs": false,
-    "noEmit": true,
-    "noUnusedLocals": true,
-    "isolatedModules": true,
-    "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
-    "strict": true,
+	"compilerOptions": {
+		"tsBuildInfoFile": "node_modules/.cache/tsbuildinfo.server.json",
+		"composite": true,
+		"target": "ESNext",
+		"lib": ["ESNext", "DOM", "DOM.Iterable", "DOM.AsyncIterable"],
+		"types": ["vite/client"],
+		"jsx": "react-jsx",
+		"jsxImportSource": "@mewhhaha/fx-router",
+		"allowImportingTsExtensions": true,
+		"module": "ESNext",
+		"esModuleInterop": true,
+		"verbatimModuleSyntax": true,
+		"moduleResolution": "Bundler",
+		"exactOptionalPropertyTypes": true,
+		"resolveJsonModule": true,
+		"allowJs": true,
+		"checkJs": false,
+		"noEmit": true,
+		"noUnusedLocals": true,
+		"isolatedModules": true,
+		"allowSyntheticDefaultImports": true,
+		"forceConsistentCasingInFileNames": true,
+		"strict": true,
 
-    "skipLibCheck": true,
-    "rootDirs": ["./.router/types", "."]
-  },
-  "exclude": ["test", "dist"],
-  "include": [
-    "app",
-    "worker/main.ts",
-    "app/assets",
-    ".router/types",
-    "worker-configuration.d.ts"
-  ]
+		"skipLibCheck": true,
+		"rootDirs": ["./.router/types", "."]
+	},
+	"exclude": ["test", "dist"],
+	"include": [
+		"app",
+		"worker/main.ts",
+		"app/assets",
+		".router/types",
+		"worker-configuration.d.ts"
+	]
 }

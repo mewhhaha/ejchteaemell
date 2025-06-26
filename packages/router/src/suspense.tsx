@@ -1,27 +1,36 @@
-import { jsx } from "./runtime/jsx-runtime.mts";
 import type { JSX } from "./runtime/jsx.mts";
-import { into, type Html } from "./runtime/node.mts";
+import { into } from "./runtime/node.mts";
 
 const suspended = new Map<string, Promise<[id: string, html: string]>>();
 
-export const Suspense = ({
-  fallback,
-  children,
-}: {
+type SuspenseProps<AS extends keyof JSX.IntrinsicElements = "div"> = {
+  as?: AS;
   fallback: JSX.Element;
   children: JSX.Element | (() => Promise<JSX.Element>);
-}): Html => {
+} & Omit<JSX.IntrinsicElements[AS], "children">;
+
+export const Suspense = ({
+  fallback,
+  as: As = "div",
+  children,
+  ...props
+}: SuspenseProps): JSX.Element => {
   const id = `suspense-${crypto.randomUUID()}`;
-  suspended.set(
-    id,
-    typeof children === "function"
-      ? children().then(async (el) => [id, await (await el).toPromise()])
-      : (async () => [id, await (await children).toPromise()])(),
+
+  let promise: Promise<[id: string, html: string]> | undefined;
+  if (typeof children === "function") {
+    promise = children().then(async (el) => [id, await (await el).toPromise()]);
+  } else {
+    promise = (async () => [id, await (await children).toPromise()])();
+  }
+
+  suspended.set(id, promise);
+
+  return (
+    <As id={id} {...props}>
+      {fallback}
+    </As>
   );
-  return jsx("div", {
-    id,
-    children: fallback,
-  });
 };
 
 type ResolveProps = {
@@ -30,6 +39,10 @@ type ResolveProps = {
 
 /** Where the templates and the custom elements for swapping the content are defined. */
 export const Resolve = ({ nonce }: ResolveProps): JSX.Element => {
+  if (suspended.size === 0) {
+    return <></>;
+  }
+
   return into(
     (async function* () {
       const nonceAttribute = nonce ? ` nonce="${nonce}"` : "";
@@ -67,4 +80,3 @@ customElements.define('resolved-data', ResolvedData);
     })(),
   );
 };
-

@@ -21,15 +21,12 @@
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.12.3",
-  "dependencies": {
-    "@mewhhaha/fx-router": "workspace:^",
+  "devDependencies": {
+    "oxlint": "^1.3.0",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/user-event": "^14.6.1",
     "happy-dom": "^18.0.1",
     "vitest": "^3.2.4"
-  },
-  "devDependencies": {
-    "oxlint": "^1.3.0"
   }
 }

@@ -8,6 +8,7 @@
     "types": ["@cloudflare/workers-types/2023-07-01", "@types/node"],
     "resolveJsonModule": true,
     "jsx": "react-jsx",
+    "jsxImportSource": "@mewhhaha/fx-router",
     "allowImportingTsExtensions": true,
     "checkJs": false,
     "noEmit": true,
@@ -21,5 +22,5 @@
     "skipLibCheck": true,
     "erasableSyntaxOnly": true
   },
-  "include": ["src"]
+  "include": ["src", "../../workers/example/app/components/Signal.tsx"]
 }

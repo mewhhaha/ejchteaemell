@@ -13,8 +13,8 @@
       "types": "./src/router.mts"
     },
     "./components": {
-      "import": "./src/suspense.mts",
-      "types": "./src/suspense.mts"
+      "import": "./src/suspense.tsx",
+      "types": "./src/suspense.tsx"
     },
     "./fs-routes": {
       "import": "./src/fs-routes/js.mts",
@@ -37,8 +37,8 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250430.0",
-    "@types/node": "^22.15.3",
+    "@cloudflare/workers-types": "^4.20250620.0",
+    "@types/node": "^24.0.3",
     "typescript": "^5.8.3"
   }
 }
