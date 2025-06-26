@@ -1,4 +1,4 @@
-import { serializer } from "../runtime/serializer.mts";
+import { serializer } from "./serializer.mts";
 
 interface ReactiveSignal<T> {
   id: string;
@@ -12,7 +12,7 @@ interface ReactiveSignal<T> {
   _isSignal: true;
 }
 
-export const useSignal = <T>(initialValue: T): ReactiveSignal<T> => {
+export const createSignal = <T>(initialValue: T): ReactiveSignal<T> => {
   const signal: ReactiveSignal<T> = {
     id: crypto.randomUUID(),
     _value: initialValue,

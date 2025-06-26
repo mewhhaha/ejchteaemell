@@ -1,11 +1,10 @@
 import { expect, test } from "vitest";
-import { useSignal } from "./reactive-signal.ts";
 import { renderHTML } from "../runtime/jsx-runtime.mts";
 import { serializer } from "../runtime/serializer.mts";
-import { signalContext } from "../runtime/signal-context.mts";
+import { clear, useSignal } from "../runtime/signal-context.mts";
 
 function Counter() {
-  const count = signalContext.track("count", useSignal(0));
+  const count = useSignal(0);
 
   return (
     <div>
@@ -19,7 +18,7 @@ function Counter() {
 
 test("automatic closure capture works", () => {
   serializer.reset();
-  signalContext.clear();
+  clear();
 
   const html = renderHTML(
     <html>

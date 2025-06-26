@@ -1,15 +1,14 @@
 import { expect, test } from "vitest";
 import { getByTestId } from "@testing-library/dom";
 import { userEvent } from "@testing-library/user-event";
-import { useSignal } from "./reactive-signal.ts";
 import { renderHTML } from "../runtime/jsx-runtime.mts";
 import { serializer } from "../runtime/serializer.mts";
-import { signalContext } from "../runtime/signal-context.mts";
 import fs from "fs";
 import path from "path";
+import { clear, useSignal } from "../runtime/signal-context.mts";
 
 function Counter() {
-  const count = signalContext.track("count", useSignal(0));
+  const count = useSignal(0);
 
   return (
     <div>
@@ -31,7 +30,7 @@ function Counter() {
 test("user interactions work with real fx-client hydration", async () => {
   // Reset state
   serializer.reset();
-  signalContext.clear();
+  clear();
 
   // Generate HTML with state
   const html = renderHTML(<Counter />);
@@ -90,8 +89,8 @@ test("user interactions work with real fx-client hydration", async () => {
 
 test("multiple signals with user interactions", async () => {
   function MultiSignalComponent() {
-    const count = signalContext.track("count", useSignal(5));
-    const name = signalContext.track("name", useSignal("Alice"));
+    const count = useSignal(5);
+    const name = useSignal("Alice");
 
     return (
       <div>
@@ -114,7 +113,7 @@ test("multiple signals with user interactions", async () => {
 
   // Reset state
   serializer.reset();
-  signalContext.clear();
+  clear();
 
   // Generate HTML
   const html = renderHTML(<MultiSignalComponent />);

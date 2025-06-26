@@ -1,17 +1,16 @@
 import { expect, test } from "vitest";
 import { renderHTML } from "../runtime/jsx-runtime.mts";
 import { serializer } from "../runtime/serializer.mts";
-import { signalContext } from "../runtime/signal-context.mts";
-import { useSignal } from "./reactive-signal.ts";
+import { clear, useSignal } from "../runtime/signal-context.mts";
 
 test("current pattern: signalContext.track with useSignal", async () => {
   serializer.reset();
-  signalContext.clear();
+  clear();
 
   function CurrentPattern() {
     // Current verbose but explicit pattern
-    const count = signalContext.track("count", useSignal(0));
-    const name = signalContext.track("name", useSignal("World"));
+    const count = useSignal(0);
+    const name = useSignal("World");
 
     return (
       <div>
@@ -37,12 +36,12 @@ test("current pattern: signalContext.track with useSignal", async () => {
 
 test("simplified pattern: direct signalContext.useSignal", async () => {
   serializer.reset();
-  signalContext.clear();
+  clear();
 
   function SimplifiedPattern() {
     // New simplified pattern - but closure capture needs fixing
-    const count = signalContext.useSignal(0, "count"); // explicit name needed for now
-    const name = signalContext.useSignal("World", "name");
+    const count = useSignal(0, "count"); // explicit name needed for now
+    const name = useSignal("World", "name");
 
     return (
       <div>

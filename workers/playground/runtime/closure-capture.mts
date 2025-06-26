@@ -1,4 +1,4 @@
-import { isSignal } from "../test/reactive-signal.ts";
+import { isSignal } from "./reactive-signal.ts";
 import { signalContext } from "./signal-context.mts";
 
 interface CapturedVariable {

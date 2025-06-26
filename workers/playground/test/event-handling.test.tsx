@@ -1,16 +1,15 @@
 import { expect, test } from "vitest";
 import { getByTestId } from "@testing-library/dom";
 import { userEvent } from "@testing-library/user-event";
-import { useSignal } from "./reactive-signal.ts";
 import { renderHTML } from "../runtime/jsx-runtime.mts";
 import { serializer } from "../runtime/serializer.mts";
-import { signalContext } from "../runtime/signal-context.mts";
 import fs from "fs";
 import path from "path";
+import { clear, useSignal } from "../runtime/signal-context.mts";
 
 function EventDemoComponent() {
-  const message = signalContext.track("message", useSignal("Not submitted"));
-  const clickCount = signalContext.track("clickCount", useSignal(0));
+  const message = useSignal("Not submitted");
+  const clickCount = useSignal(0);
 
   return (
     <div>
@@ -60,7 +59,7 @@ function EventDemoComponent() {
 test("event.preventDefault() works in onClick handlers", async () => {
   // Reset state
   serializer.reset();
-  signalContext.clear();
+  clear();
 
   // Generate HTML
   const html = renderHTML(<EventDemoComponent />);
@@ -124,13 +123,10 @@ test("event.preventDefault() works in onClick handlers", async () => {
 test("form onSubmit with preventDefault works", async () => {
   // Reset state
   serializer.reset();
-  signalContext.clear();
+  clear();
 
   function FormComponent() {
-    const submitStatus = signalContext.track(
-      "submitStatus",
-      useSignal("Ready"),
-    );
+    const submitStatus = useSignal("Ready");
 
     return (
       <form

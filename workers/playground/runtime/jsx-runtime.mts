@@ -1,5 +1,5 @@
 import { serializer } from "./serializer.mts";
-import { isSignal } from "../test/reactive-signal.ts";
+import { isSignal } from "./reactive-signal.ts";
 import { closureCapture } from "./closure-capture.mts";
 
 export function jsx(type: any, props: any): any {

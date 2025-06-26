@@ -1,12 +1,11 @@
 import { expect, test } from "vitest";
-import { useSignal } from "./reactive-signal.ts";
 import { renderHTML } from "../runtime/jsx-runtime.mts";
 import { serializer } from "../runtime/serializer.mts";
-import { signalContext } from "../runtime/signal-context.mts";
+import { clear, useSignal } from "../runtime/signal-context.mts";
 
 function Counter() {
-  const count = signalContext.track("count", useSignal(0));
-  const name = signalContext.track("name", useSignal("World"));
+  const count = useSignal(0);
+  const name = useSignal("World");
 
   return (
     <div>
@@ -28,7 +27,7 @@ function Counter() {
 
 test("clean React-like syntax with automatic closure capture", () => {
   serializer.reset();
-  signalContext.clear();
+  clear();
 
   const html = renderHTML(
     <html>
