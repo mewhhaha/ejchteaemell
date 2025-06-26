@@ -3,6 +3,7 @@ import { serializer } from "../runtime/serializer.mts";
 interface ReactiveSignal<T> {
   id: string;
   value: T;
+  _value: T;
   _serialized: boolean;
   _serializationId?: string;
   _subscribers: Set<() => void>;

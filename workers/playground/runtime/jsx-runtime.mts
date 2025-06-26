@@ -56,6 +56,10 @@ export function clearJSXScope(): void {
   closureCapture.popScope();
 }
 
+export function getJSXScope(): Record<string, any> {
+  return currentJSXScope;
+}
+
 export function renderToString(element: any): string {
   if (element === null || element === undefined) {
     return "";
@@ -80,7 +84,6 @@ export function renderToString(element: any): string {
 
     if (typeof type === "function") {
       // Collect all signals from local scope
-      const componentScope: Record<string, any> = {};
 
       // Execute component to discover signals
       const tempJsx = jsx;
@@ -118,7 +121,9 @@ export function renderToString(element: any): string {
               typeof value === "string" &&
               value.startsWith("fx.invokeHandler")
             ) {
-              return `onclick="${value}"`;
+              // Convert React-style event names to HTML attributes
+              const eventName = key.toLowerCase().replace(/^on/, "");
+              return `on${eventName}="${value}"`;
             }
             return `${key}="${value}"`;
           })

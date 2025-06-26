@@ -83,12 +83,12 @@ class FXClient {
   }
 
   restoreHandler(handler) {
-    // Create function from string
+    // Create function from string with event parameter accessible
     const fn = new Function(
       "fx",
       "event",
       `
-      return (${handler.fn})()`,
+      return (${handler.fn})(event)`,
     );
 
     this.handlers.set(handler.id, fn);
@@ -125,26 +125,30 @@ class FXClient {
   hydrate() {
     this.parseComments();
 
-    // Set up click handlers by finding elements with fx.invokeHandler onclick attributes
-    const elementsWithHandlers = document.querySelectorAll(
-      '[onclick*="fx.invokeHandler"]',
-    );
-    elementsWithHandlers.forEach((element) => {
-      const onclick = element.getAttribute("onclick");
-      if (onclick && onclick.includes("fx.invokeHandler")) {
-        // Extract handler ID from onclick="fx.invokeHandler('fx_1', event)"
-        const match = onclick.match(/fx\.invokeHandler\('([^']+)'.*\)/);
-        if (match) {
-          const handlerId = match[1];
-          // Set up the click event listener with addEventListener for better compatibility
-          element.addEventListener("click", (event) => {
-            event.preventDefault();
-            this.invokeHandler(handlerId, event);
-          });
-          // Remove the onclick attribute to avoid conflicts
-          element.removeAttribute("onclick");
+    // Set up event handlers for all elements with fx.invokeHandler attributes
+    const allElements = document.querySelectorAll("*");
+    allElements.forEach((element) => {
+      // Check all attributes for fx.invokeHandler patterns
+      Array.from(element.attributes).forEach((attr) => {
+        if (
+          attr.name.startsWith("on") &&
+          attr.value.includes("fx.invokeHandler")
+        ) {
+          // Extract handler ID from attribute like onclick="fx.invokeHandler('fx_1', event)"
+          const match = attr.value.match(/fx\.invokeHandler\('([^']+)'.*\)/);
+          if (match) {
+            const handlerId = match[1];
+            const eventType = attr.name.substring(2); // Remove "on" prefix
+
+            // Set up the event listener with addEventListener for better compatibility
+            element.addEventListener(eventType, (event) => {
+              this.invokeHandler(handlerId, event);
+            });
+            // Remove the attribute to avoid conflicts
+            element.removeAttribute(attr.name);
+          }
         }
-      }
+      });
     });
   }
 }
