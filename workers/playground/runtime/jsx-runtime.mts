@@ -1,139 +1,167 @@
-import { into, isHtml, type Html } from "./node.mts";
-import "./typed.mts";
-import type { JSX } from "./typed.mts";
-export type * from "./typed.mts";
-export { type JSX } from "./jsx.mts";
-export { into };
+import { serializer } from "./serializer.mts";
+import { isSignal } from "../test/reactive-signal.ts";
+import { closureCapture } from "./closure-capture.mts";
 
-export const Fragment = (props: any): any => jsx("", props);
-
-// Void elements are self-closing and shouldn't have a closing tag
-const voidElements = new Set([
-  "area",
-  "base",
-  "br",
-  "col",
-  "embed",
-  "hr",
-  "img",
-  "input",
-  "link",
-  "meta",
-  "param",
-  "source",
-  "track",
-  "wbr",
-]);
-
-export function jsx(
-  tag: string | Function,
-  { children, ...props }: { children?: unknown } & Record<string, any>,
-): Html {
-  if (typeof tag === "function") {
-    return tag({ children, ...props });
+export function jsx(type: any, props: any): any {
+  if (typeof type === "function") {
+    return type(props);
   }
 
-  let attrs = "";
-  for (const key in props) {
-    let value = props[key];
+  let newProps = { ...props };
 
-    let sanitized = sanitize(value);
-    if (sanitized === undefined) {
-      continue;
+  if (props) {
+    for (const [key, value] of Object.entries(props)) {
+      if (typeof value === "function" && key.startsWith("on")) {
+        const processedFunction = closureCapture.processFunction(value);
+        const handlerId = serializer.addHandler(
+          key.slice(2).toLowerCase(),
+          processedFunction,
+        );
+        newProps[key] = `fx.invokeHandler('${handlerId}', event)`;
+      }
     }
-
-    // Special case for class to make the class names more readable
-
-    if (key === "class") {
-      sanitized = sanitized
-        ?.split(/\s+/g)
-        .filter((x: string) => x !== "")
-        .join(" ");
-    }
-
-    attrs += ` ${key}="${sanitized}" `;
   }
 
-  const generator = async function* (): AsyncGenerator<string> {
-    if (tag) {
-      yield `<${tag}${attrs}>`;
-    }
+  if (type === "html" && !serializer.hasInjectedScript) {
+    serializer.hasInjectedScript = true;
+    newProps.children = [
+      ...(Array.isArray(newProps.children)
+        ? newProps.children
+        : [newProps.children].filter(Boolean)),
+      jsx("script", { src: "/fx-client.js" }),
+    ];
+  }
 
-    async function* processChild(child: unknown): AsyncGenerator<string> {
-      if (child === undefined || child === null || child === false) {
-        return;
-      }
-      if (child instanceof Promise) {
-        const resolved = await child;
-        yield* processChild(resolved);
-        return;
-      }
-      if (isHtml(child)) {
-        yield* child.text;
-        return;
-      }
-      if (Array.isArray(child)) {
-        for (let i = 0; i < child.length; i++) {
-          const c = child[i];
-          yield* processChild(c);
-        }
-        return;
-      }
-
-      if (typeof child === "function") {
-        yield* processChild(child());
-        return;
-      }
-
-      yield escapeHtml(child.toString());
-    }
-
-    yield* processChild(children);
-
-    if (tag && !voidElements.has(tag)) {
-      yield `</${tag}>`;
-    }
+  const element = {
+    type,
+    props: newProps,
+    key: props?.key,
   };
 
-  return into(generator());
+  return element;
 }
 
-export function escapeHtml(input: string): string {
-  return input.replaceAll(/[&<>"']/g, (char) => {
-    switch (char) {
-      case "&":
-        return "&amp;";
-      case "<":
-        return "&lt;";
-      case ">":
-        return "&gt;";
-      case '"':
-        return "&quot;";
-      case "'":
-        return "&#39;";
-      default:
-        return char;
+export const jsxs = jsx;
+export const Fragment = (props: any): any => jsx("", props);
+
+let currentJSXScope: Record<string, any> = {};
+
+export function setJSXScope(scope: Record<string, any>): void {
+  currentJSXScope = scope;
+  closureCapture.pushScope(scope);
+}
+
+export function clearJSXScope(): void {
+  currentJSXScope = {};
+  closureCapture.popScope();
+}
+
+export function renderToString(element: any): string {
+  if (element === null || element === undefined) {
+    return "";
+  }
+
+  if (typeof element === "string" || typeof element === "number") {
+    return String(element);
+  }
+
+  if (isSignal(element)) {
+    const signalId = element.serialize();
+    const boundNodeId = serializer.addSignalBinding(signalId);
+    return `<span id="${boundNodeId}">${element.value}</span>`;
+  }
+
+  if (Array.isArray(element)) {
+    return element.map(renderToString).join("");
+  }
+
+  if (typeof element === "object" && element.type) {
+    const { type, props } = element;
+
+    if (typeof type === "function") {
+      // Collect all signals from local scope
+      const componentScope: Record<string, any> = {};
+
+      // Execute component to discover signals
+      const tempJsx = jsx;
+      let signals: Record<string, any> = {};
+
+      // Monkey patch jsx to capture signals during render
+      (globalThis as any).jsx = function (t: any, p: any) {
+        if (p) {
+          for (const [key, value] of Object.entries(p)) {
+            if (isSignal(value)) {
+              signals[key] = value;
+            }
+          }
+        }
+        return tempJsx(t, p);
+      };
+
+      setJSXScope(signals);
+      const result = renderToString(type(props));
+      clearJSXScope();
+
+      (globalThis as any).jsx = tempJsx;
+
+      return result;
     }
-  });
+
+    const attributeString = props
+      ? Object.entries(props)
+          .filter(([key]) => key !== "children")
+          .map(([key, value]) => {
+            if (key === "className") {
+              return `class="${value}"`;
+            }
+            if (
+              typeof value === "string" &&
+              value.startsWith("fx.invokeHandler")
+            ) {
+              return `onclick="${value}"`;
+            }
+            return `${key}="${value}"`;
+          })
+          .join(" ")
+      : "";
+
+    const childrenString = props?.children
+      ? Array.isArray(props.children)
+        ? props.children.map(renderToString).join("")
+        : renderToString(props.children)
+      : "";
+
+    if (
+      [
+        "area",
+        "base",
+        "br",
+        "col",
+        "embed",
+        "hr",
+        "img",
+        "input",
+        "link",
+        "meta",
+        "param",
+        "source",
+        "track",
+        "wbr",
+      ].includes(type)
+    ) {
+      return `<${type}${attributeString ? " " + attributeString : ""} />`;
+    }
+
+    return `<${type}${
+      attributeString ? " " + attributeString : ""
+    }>${childrenString}</${type}>`;
+  }
+
+  return String(element);
 }
 
-const sanitize = (value: any) => {
-  if (typeof value === "string") {
-    return value.replaceAll(/"/g, "&quot;");
-  }
-  if (value === null || value === undefined || value === false) {
-    return undefined;
-  }
-
-  if (value === true) {
-    return "true";
-  }
-
-  if (typeof value === "number") {
-    return value.toString();
-  }
-};
-
-export function jsxs(tag: any, props: any): JSX.Element {
-  return jsx(tag, props);
+export function renderHTML(element: any): string {
+  const html = renderToString(element);
+  const state = serializer.serialize();
+  return html + "\n" + state;
 }
