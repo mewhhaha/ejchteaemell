@@ -97,6 +97,10 @@ export function jsx(
       if (child === undefined || child === null || child === false) {
         return;
       }
+      if (isAnnotation(child)) {
+        yield* processChild(child.value);
+        return;
+      }
       if (child instanceof Promise) {
         const resolved = await child;
         yield* processChild(resolved);

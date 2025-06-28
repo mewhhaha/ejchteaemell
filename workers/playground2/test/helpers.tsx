@@ -1,6 +1,7 @@
-import { annotate, into, scopes } from "playground/jsx-runtime";
+import { annotate, into, jsx, scopes } from "playground/jsx-runtime";
 import "./store.js";
 import { md5 } from "./md5.js";
+import { isHtml } from "../runtime/node.mts";
 
 declare global {
   interface Window {
@@ -55,7 +56,13 @@ innerHTML="${eff}";
 -->`;
 
     const result = fn();
-    yield* (<>{result}</>).generator;
+    if (result instanceof Promise) {
+      yield* (await result).generator;
+    } else if (isHtml(result)) {
+      yield* result.generator;
+    } else {
+      yield <>{result}</>;
+    }
   }
 
   return into(generator());

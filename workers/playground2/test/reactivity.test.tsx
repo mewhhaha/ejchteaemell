@@ -62,6 +62,54 @@ describe("render interactive html", () => {
     const button = screen.getByRole("button", { name: "0" });
     await user.click(button);
     screen.getByRole("button", { name: "1" });
+    await user.click(button);
+    screen.getByRole("button", { name: "2" });
+  });
+
+  it("should work with async components", async () => {
+    async function AsyncComponent(this: { signal: Signal<number> }) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      this.signal = useSignal(10);
+      return (
+        <button
+          onClick={handler(() => {
+            this.signal.value++;
+          })}
+        >
+          {effect(() => `${this.signal.value}`)}
+        </button>
+      );
+    }
+
+    function Component(this: { signal: Signal<number> }) {
+      this.signal = useSignal(0);
+
+      return (
+        <>
+          <AsyncComponent />
+          <button
+            onClick={handler(() => {
+              this.signal.value++;
+            })}
+          >
+            {effect(() => `${this.signal.value}`)}
+          </button>
+        </>
+      );
+    }
+    await render(<Component />);
+
+    const user = userEvent.setup();
+    const syncButton = screen.getByRole("button", { name: "0" });
+    const asyncButton = screen.getByRole("button", { name: "10" });
+    await user.click(syncButton);
+    await user.click(asyncButton);
+    screen.getByRole("button", { name: "1" });
+    screen.getByRole("button", { name: "10" });
+    await user.click(syncButton);
+    await user.click(asyncButton);
+    screen.getByRole("button", { name: "2" });
+    screen.getByRole("button", { name: "11" });
   });
 });
 
