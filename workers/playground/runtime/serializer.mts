@@ -8,12 +8,24 @@ interface SerializedHandler {
   id: string;
   event: string;
   fn: string;
+  fnHash: string;
   thisBinding?: string;
+}
+
+function simpleHash(str: string): string {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(36);
 }
 
 class Serializer {
   private stateMap = new Map<string, SerializedState>();
   private handlerMap = new Map<string, SerializedHandler>();
+  private functionHashes = new Map<string, string>(); // hash -> function string
   private signalBindings = new Map<string, string[]>(); // signal id -> dom node ids
   private idCounter = 0;
   public hasInjectedScript = false;
@@ -35,12 +47,19 @@ class Serializer {
 
   addHandler(event: string, fn: string): string {
     const id = this.generateId();
+    const fnHash = simpleHash(fn);
+
     const serialized: SerializedHandler = {
       id,
       event,
       fn,
+      fnHash,
     };
     this.handlerMap.set(id, serialized);
+
+    // Store the function by hash for deduplication
+    this.functionHashes.set(fnHash, fn);
+
     return id;
   }
 
@@ -62,12 +81,19 @@ class Serializer {
         .replace(/}$/, "")}\n}`;
     }
 
+    const fnHash = simpleHash(fnString);
+
     const serialized: SerializedHandler = {
       id,
       event,
       fn: fnString,
+      fnHash,
     };
     this.handlerMap.set(id, serialized);
+
+    // Store the function by hash for deduplication
+    this.functionHashes.set(fnHash, fnString);
+
     return id;
   }
 
@@ -79,12 +105,24 @@ class Serializer {
     return comments;
   }
 
-  generateHandlerComments(): string {
-    let comments = "";
-    for (const [id, handler] of this.handlerMap) {
-      comments += `<!-- fx:handler:${id}:${JSON.stringify(handler)} -->\n`;
+  generateHandlerScripts(): string {
+    let scripts = "";
+
+    // First, emit unique function definitions by hash
+    const emittedHashes = new Set<string>();
+    for (const [hash, fnString] of this.functionHashes) {
+      if (!emittedHashes.has(hash)) {
+        scripts += `<script>fx.registerFunction('${hash}', ${fnString});</script>\n`;
+        emittedHashes.add(hash);
+      }
     }
-    return comments;
+
+    // Then, register handlers that reference the functions by hash
+    for (const [id, handler] of this.handlerMap) {
+      scripts += `<script>fx.registerHandler('${id}', '${handler.fnHash}');</script>\n`;
+    }
+
+    return scripts;
   }
 
   addSignalBinding(signalId: string, nodeId?: string): string {
@@ -111,14 +149,38 @@ class Serializer {
   serialize(): string {
     return (
       this.generateStateComments() +
-      this.generateHandlerComments() +
+      this.generateHandlerScripts() +
       this.generateBindingComments()
     );
+  }
+
+  processHandlersWithClosure(closureCapture: any): void {
+    // Process all raw handlers with closure capture
+    for (const [id, handler] of this.handlerMap) {
+      if (handler.fn && !handler.fn.includes("fx.getSignal")) {
+        // Create a function from the string to process it
+        try {
+          const fn = new Function(`return ${handler.fn}`)();
+          const processedFn = closureCapture.processFunction(fn);
+
+          // Update handler with processed function and new hash
+          handler.fn = processedFn;
+          handler.fnHash = simpleHash(processedFn);
+
+          // Update the function hash map
+          this.functionHashes.set(handler.fnHash, processedFn);
+        } catch (e) {
+          // If we can't parse the function, leave it as is
+          console.warn("Failed to process handler function:", e);
+        }
+      }
+    }
   }
 
   reset(): void {
     this.stateMap.clear();
     this.handlerMap.clear();
+    this.functionHashes.clear();
     this.signalBindings.clear();
     this.idCounter = 0;
     this.hasInjectedScript = false;

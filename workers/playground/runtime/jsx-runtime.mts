@@ -1,10 +1,38 @@
 import { serializer } from "./serializer.mts";
-import { isSignal } from "./reactive-signal.ts";
+import { isSignal, createSignal } from "./reactive-signal.ts";
 import { closureCapture } from "./closure-capture.mts";
+import {
+  pushComponentContext,
+  popComponentContext,
+  getCurrentComponentContext,
+  getAllComponentContexts,
+} from "./signal-context.mts";
 
 export function jsx(type: any, props: any): any {
   if (typeof type === "function") {
-    return type(props);
+    const fnSource = type.toString();
+
+    const variableNames: string[] = [];
+    const matches = fnSource.matchAll(
+      /(?:const|let|var)\s+(\w+)\s*=\s*(?:\([^)]*\.)?\buseSignal\)\s*\(/g,
+    );
+    for (const match of matches) {
+      variableNames.push(match[1]);
+    }
+
+    const contextId = pushComponentContext(variableNames);
+
+    const result = type(props);
+
+    const context = popComponentContext();
+
+    if (context && Object.keys(context.signals).length > 0) {
+      setJSXScope(context.signals);
+      serializer.processHandlersWithClosure(closureCapture);
+      setTimeout(() => clearJSXScope(), 0);
+    }
+
+    return result;
   }
 
   let newProps = { ...props };
@@ -12,10 +40,9 @@ export function jsx(type: any, props: any): any {
   if (props) {
     for (const [key, value] of Object.entries(props)) {
       if (typeof value === "function" && key.startsWith("on")) {
-        const processedFunction = closureCapture.processFunction(value);
         const handlerId = serializer.addHandler(
           key.slice(2).toLowerCase(),
-          processedFunction,
+          value.toString(),
         );
         newProps[key] = `fx.invokeHandler('${handlerId}', event)`;
       }
@@ -83,31 +110,8 @@ export function renderToString(element: any): string {
     const { type, props } = element;
 
     if (typeof type === "function") {
-      // Collect all signals from local scope
-
-      // Execute component to discover signals
-      const tempJsx = jsx;
-      let signals: Record<string, any> = {};
-
-      // Monkey patch jsx to capture signals during render
-      (globalThis as any).jsx = function (t: any, p: any) {
-        if (p) {
-          for (const [key, value] of Object.entries(p)) {
-            if (isSignal(value)) {
-              signals[key] = value;
-            }
-          }
-        }
-        return tempJsx(t, p);
-      };
-
-      setJSXScope(signals);
-      const result = renderToString(type(props));
-      clearJSXScope();
-
-      (globalThis as any).jsx = tempJsx;
-
-      return result;
+      // This path shouldn't be hit now since components are processed in jsx()
+      return renderToString(type(props));
     }
 
     const attributeString = props

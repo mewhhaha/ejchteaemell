@@ -3,20 +3,21 @@ class FXClient {
   constructor() {
     this.signals = new Map();
     this.handlers = new Map();
+    this.functions = new Map(); // hash -> function
     this.bindings = new Map();
   }
 
   parseComments() {
-    const walker = document.createTreeWalker(
-      document.documentElement,
-      NodeFilter.SHOW_COMMENT,
-      null,
-      false,
-    );
+    // Parse comments from HTML source for better compatibility with JSDOM
+    const htmlSource = document.documentElement.outerHTML;
+    console.log("DEBUG: Parsing HTML source for comments");
 
-    let comment;
-    while ((comment = walker.nextNode())) {
-      const data = comment.data.trim();
+    // Find all HTML comments
+    const commentMatches = htmlSource.matchAll(/<!--\s*(.*?)\s*-->/g);
+
+    for (const match of commentMatches) {
+      const data = match[1].trim();
+      console.log("DEBUG: Found comment:", data);
 
       if (data.startsWith("fx:state:")) {
         try {
@@ -27,18 +28,6 @@ class FXClient {
           this.restoreSignal(state);
         } catch (e) {
           console.error("Failed to parse state comment:", data, e);
-        }
-      }
-
-      if (data.startsWith("fx:handler:")) {
-        try {
-          const colonIndex = data.indexOf(":", 11); // After "fx:handler:"
-          const id = data.substring(11, colonIndex);
-          const jsonData = data.substring(colonIndex + 1);
-          const handler = JSON.parse(jsonData);
-          this.restoreHandler(handler);
-        } catch (e) {
-          console.error("Failed to parse handler comment:", data, e);
         }
       }
 
@@ -53,6 +42,27 @@ class FXClient {
           console.error("Failed to parse binding comment:", data, e);
         }
       }
+    }
+  }
+
+  registerFunction(hash, fn) {
+    console.log("DEBUG: Registering function:", hash);
+    this.functions.set(hash, fn);
+  }
+
+  registerHandler(handlerId, fnHash) {
+    console.log(
+      "DEBUG: Registering handler:",
+      handlerId,
+      "with function hash:",
+      fnHash,
+    );
+    const fn = this.functions.get(fnHash);
+    if (fn) {
+      this.handlers.set(handlerId, (event) => fn.call(this, event));
+      console.log("DEBUG: Handler successfully registered:", handlerId);
+    } else {
+      console.error("DEBUG: Function not found for hash:", fnHash);
     }
   }
 
@@ -82,43 +92,67 @@ class FXClient {
     this.signals.set(state.id, signal);
   }
 
-  restoreHandler(handler) {
-    // Create function from string with event parameter accessible
-    const fn = new Function(
-      "fx",
-      "event",
-      `
-      return (${handler.fn})(event)`,
-    );
-
-    this.handlers.set(handler.id, fn);
-  }
-
   restoreBinding(signalId, nodeIds) {
+    console.log(
+      "DEBUG: Restoring binding for signal:",
+      signalId,
+      "to nodes:",
+      nodeIds,
+    );
     const signal = this.signals.get(signalId);
-    if (!signal) return;
+    if (!signal) {
+      console.log("DEBUG: Signal not found for binding:", signalId);
+      return;
+    }
 
     // Subscribe to signal changes and update all bound nodes
     signal.subscribe(() => {
+      console.log(
+        "DEBUG: Signal changed:",
+        signalId,
+        "new value:",
+        signal.value,
+      );
       nodeIds.forEach((nodeId) => {
         const element = document.getElementById(nodeId);
         if (element) {
+          console.log(
+            "DEBUG: Updating element:",
+            nodeId,
+            "with value:",
+            signal.value,
+          );
           element.textContent = signal.value;
+        } else {
+          console.log("DEBUG: Element not found:", nodeId);
         }
       });
     });
 
+    console.log(
+      "DEBUG: Subscription set up, subscribers count:",
+      signal._subscribers.size,
+    );
     this.bindings.set(signalId, nodeIds);
   }
 
   getSignal(id) {
-    return this.signals.get(id);
+    console.log("DEBUG: Getting signal:", id);
+    const signal = this.signals.get(id);
+    console.log("DEBUG: Signal found:", signal);
+    return signal;
   }
 
   invokeHandler(handlerId, event) {
+    console.log("DEBUG: Invoking handler:", handlerId);
     const handler = this.handlers.get(handlerId);
     if (handler) {
-      return handler(this, event);
+      console.log("DEBUG: Handler found, executing");
+      const result = handler(event);
+      console.log("DEBUG: Handler executed, result:", result);
+      return result;
+    } else {
+      console.log("DEBUG: Handler not found for:", handlerId);
     }
   }
 
@@ -158,7 +192,10 @@ window.fx = new FXClient();
 
 // Auto-hydrate when DOM is ready
 if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", () => window.fx.hydrate());
+  document.addEventListener("DOMContentLoaded", () => {
+    window.fx.hydrate();
+  });
 } else {
+  // DOM is already ready
   window.fx.hydrate();
 }

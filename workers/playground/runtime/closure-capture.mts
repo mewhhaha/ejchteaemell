@@ -1,5 +1,5 @@
 import { isSignal } from "./reactive-signal.ts";
-import { signalContext } from "./signal-context.mts";
+import { getSignal } from "./signal-context.mts";
 
 interface CapturedVariable {
   name: string;
@@ -20,7 +20,7 @@ class ClosureCapture {
 
   findVariable(name: string): any {
     // First check the signal context
-    const signal = signalContext.getSignal(name);
+    const signal = getSignal(name);
     if (signal) return signal;
 
     // Then check scope stack
@@ -75,12 +75,15 @@ class ClosureCapture {
   captureClosureVariables(fn: Function): CapturedVariable[] {
     const fnString = fn.toString();
     const captured: CapturedVariable[] = [];
+
+    // Extract variable names used in the function
     const variableNames = this.extractVariablesFromFunction(fnString);
 
+    // For each variable name, check if we have a signal for it
     for (const varName of variableNames) {
-      const variable = this.findVariable(varName);
-      if (isSignal(variable)) {
-        const signalId = variable.serialize();
+      const signal = this.findVariable(varName);
+      if (isSignal(signal)) {
+        const signalId = signal.serialize();
         captured.push({
           name: varName,
           signalId,
@@ -88,7 +91,6 @@ class ClosureCapture {
         });
       }
     }
-
     return captured;
   }
 
@@ -126,9 +128,38 @@ class ClosureCapture {
   }
 
   processFunction(fn: Function): string {
-    const captured = this.captureClosureVariables(fn);
     const fnString = fn.toString();
-    return this.injectClosureVariables(fnString, captured);
+
+    // New approach: inject ALL signals from scope and rewrite signal accesses
+    let processedFunction = fnString;
+    const availableSignals: Record<string, string> = {};
+
+    // Collect all signals from all scopes
+    for (let i = this.scopeStack.length - 1; i >= 0; i--) {
+      const scope = this.scopeStack[i];
+      for (const [name, value] of scope) {
+        if (isSignal(value)) {
+          const signalId = value.serialize();
+          availableSignals[signalId] = name;
+
+          // Replace variable.value with fx.getSignal('signalId').value
+          const regex = new RegExp(`\\b${name}\\.value\\b`, "g");
+          processedFunction = processedFunction.replace(
+            regex,
+            `fx.getSignal('${signalId}').value`,
+          );
+
+          // Replace variable assignments: variable.value = x
+          const assignRegex = new RegExp(`\\b${name}\\.value\\s*=`, "g");
+          processedFunction = processedFunction.replace(
+            assignRegex,
+            `fx.getSignal('${signalId}').value =`,
+          );
+        }
+      }
+    }
+
+    return processedFunction;
   }
 }
 
