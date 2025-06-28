@@ -80,34 +80,31 @@ const observer = new MutationObserver((mutations) => {
 });
 
 function processNodeDirectives(node) {
-  let currentNode = node;
+  // Check for child comment nodes
+  const childNodes = Array.from(node.childNodes);
+  for (const child of childNodes) {
+    if (child.nodeType === Node.COMMENT_NODE) {
+      const commentText = child.textContent.trim();
 
-  while (currentNode.previousSibling) {
-    const prevSibling = currentNode.previousSibling;
-
-    if (prevSibling.nodeType === Node.COMMENT_NODE) {
-      const commentText = prevSibling.textContent.trim();
-
-      const effectMatch = commentText.match(
-        /effect="([^"]+)";\s*dependencies="([^"]+)";/,
-      );
-      if (effectMatch) {
-        const [, effectHash, encodedDeps] = effectMatch;
+      const innerHTMLMatch = commentText.match(/innerHTML="(.+)";/);
+      if (innerHTMLMatch) {
+        const [, content] = innerHTMLMatch;
         try {
-          const dependencies = JSON.parse(decodeURIComponent(encodedDeps));
-          handleEffectDirective(node, effectHash, dependencies);
+          const parsed = JSON.parse(content);
+          handleEffectDirective(node, parsed.effect, parsed.dependencies);
         } catch (e) {
-          console.warn("Failed to parse effect directive:", e);
+          console.warn("Failed to parse innerHTML directive:", e);
         }
-        prevSibling.remove();
-        break;
+        child.remove();
+        continue;
       }
 
       const eventMatch = commentText.match(/^(\w+)="(.+)"$/);
       if (eventMatch) {
-        const [, directive, content] = eventMatch;
+        const [, directive, encodedContent] = eventMatch;
 
         try {
+          const content = decodeURIComponent(encodedContent);
           const parsed = JSON.parse(content);
 
           if (directive.startsWith("on")) {
@@ -116,7 +113,42 @@ function processNodeDirectives(node) {
             handleAttributeDirective(node, directive, parsed);
           }
         } catch (e) {
-          console.warn("Failed to parse directive content:", content, e);
+          console.warn("Failed to parse directive content:", encodedContent, e);
+        }
+
+        child.remove();
+        continue;
+      }
+    }
+  }
+
+  // Also check previous siblings (for comments outside the element)
+  let currentNode = node;
+  while (currentNode.previousSibling) {
+    const prevSibling = currentNode.previousSibling;
+
+    if (prevSibling.nodeType === Node.COMMENT_NODE) {
+      const commentText = prevSibling.textContent.trim();
+
+      const eventMatch = commentText.match(/^(\w+)="(.+)"$/);
+      if (eventMatch) {
+        const [, directive, encodedContent] = eventMatch;
+
+        try {
+          const content = decodeURIComponent(encodedContent);
+          const parsed = JSON.parse(content);
+
+          if (directive.startsWith("on")) {
+            handleEventDirective(node, directive, parsed);
+          } else {
+            handleAttributeDirective(node, directive, parsed);
+          }
+        } catch (e) {
+          console.warn(
+            "Failed to parse sibling directive content:",
+            encodedContent,
+            e,
+          );
         }
 
         prevSibling.remove();
@@ -140,8 +172,11 @@ function handleEventDirective(node, eventName, { handler, dependencies }) {
   }
 
   node.addEventListener(eventType, (event) => {
+    // Resolve dependencies from the client state
     const resolvedDeps = resolveDependencies(dependencies);
-    fn(event, resolvedDeps);
+
+    // Call the original function with resolved dependencies as 'this'
+    fn.call(resolvedDeps, event);
   });
 }
 
@@ -157,8 +192,11 @@ function handleAttributeDirective(
   }
 
   window.__signal.effect(() => {
+    // Resolve dependencies from the client state
     const resolvedDeps = resolveDependencies(dependencies);
-    const value = fn(resolvedDeps);
+
+    // Call the original function with resolved dependencies as 'this'
+    const value = fn.call(resolvedDeps);
 
     if (value != null) {
       if (typeof value === "boolean") {
@@ -182,8 +220,11 @@ function handleEffectDirective(node, effectHash, dependencies) {
   }
 
   window.__signal.effect(() => {
+    // Resolve dependencies from the client state
     const resolvedDeps = resolveDependencies(dependencies);
-    const result = fn(resolvedDeps);
+
+    // Call the original function with resolved dependencies as 'this'
+    const result = fn.call(resolvedDeps);
 
     if (result != null) {
       node.textContent = String(result);
@@ -192,15 +233,8 @@ function handleEffectDirective(node, effectHash, dependencies) {
 }
 
 function getFunction(hash) {
-  const serialized = window.dynamicAssets?.get(hash);
-  if (!serialized) return null;
-
-  try {
-    return new Function("return " + serialized)();
-  } catch (e) {
-    console.warn("Failed to deserialize function:", e);
-    return null;
-  }
+  const fn = window.dynamicAssets?.get(hash);
+  return fn || null;
 }
 
 function resolveDependencies(deps) {
@@ -210,24 +244,12 @@ function resolveDependencies(deps) {
   for (const [key, value] of Object.entries(deps)) {
     if (value && typeof value === "object" && value.__isSignal) {
       const signal = window.__store.get(value);
-      resolved[key] = signal.value;
+      resolved[key] = signal; // Keep the signal object, not just its value
     } else {
       resolved[key] = value;
     }
   }
   return resolved;
-}
-
-function extractSignalsFromDeps(deps) {
-  if (!deps) return [];
-
-  const signals = [];
-  for (const value of Object.values(deps)) {
-    if (value && typeof value === "object" && value.__isSignal) {
-      signals.push(window.__store.get(value));
-    }
-  }
-  return signals;
 }
 
 observer.observe(document.body, {

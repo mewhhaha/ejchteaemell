@@ -4,36 +4,49 @@ import { md5 } from "./md5.js";
 
 declare global {
   interface Window {
-    dynamicAssets: Map<string, string>;
+    dynamicAssets: Map<string, Function>;
+    __store: {
+      get: (ref: { id: string; value: any }) => { value: any };
+    };
+    __signal: {
+      signal: (value: any) => { value: any };
+      effect: (fn: () => void) => void;
+    };
   }
 }
 
-const dynamicAssets = new Map<string, string>();
+const dynamicAssets = new Map<string, Function>();
 window.dynamicAssets = dynamicAssets;
 
 export function handler(fn: (event: Event | undefined) => void) {
   const serialized = fn.toString();
+  const dependencies = scopes.at(-1);
 
   const hash = md5(serialized);
-  dynamicAssets.set(hash, serialized);
+
+  // Store the original function for deduplication
+  dynamicAssets.set(hash, fn);
 
   return annotate(
     undefined,
     JSON.stringify({
       handler: hash,
-      dependencies: scopes.at(-1),
+      dependencies,
     }),
   );
 }
 
 export function effect(fn: () => unknown) {
   const serialized = fn.toString();
+  const dependencies = scopes.at(-1);
   const hash = md5(serialized);
-  dynamicAssets.set(hash, serialized);
+
+  // Store the original function for deduplication
+  dynamicAssets.set(hash, fn);
 
   const eff = JSON.stringify({
     effect: hash,
-    dependencies: scopes.at(-1),
+    dependencies,
   });
 
   async function* generator() {
@@ -54,15 +67,29 @@ export type Signal<T> = {
   value: T;
 };
 
-export const useSignal = <T,>(value: T): Signal<T> => {
-  return {
+export const useSignal = <T,>(initialValue: T): Signal<T> => {
+  const ref = {
     __isSignal: true,
     id: crypto.randomUUID(),
-    set value(value: T) {
-      this.value = value;
-    },
-    get value() {
-      return value;
-    },
+    value: initialValue,
   };
+
+  const actualSignal = window.__store.get(ref);
+
+  return new Proxy(ref, {
+    get(target, prop) {
+      if (prop === "value") {
+        return actualSignal.value;
+      }
+      return (target as any)[prop];
+    },
+    set(target, prop, value) {
+      if (prop === "value") {
+        actualSignal.value = value;
+        return true;
+      }
+      (target as any)[prop] = value;
+      return true;
+    },
+  }) as Signal<T>;
 };

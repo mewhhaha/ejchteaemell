@@ -144,7 +144,7 @@ export function jsx(
       yield* generator();
     }
 
-    into(combined());
+    return into(combined());
   }
 
   return into(generator());
