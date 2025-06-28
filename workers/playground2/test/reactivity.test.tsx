@@ -2,7 +2,7 @@ import { type JSX } from "playground/jsx-runtime";
 import { describe, it } from "vitest";
 import { screen } from "@testing-library/dom";
 import { userEvent } from "@testing-library/user-event";
-import { effect, handler, useSignal } from "./helpers.js";
+import { effect, handler, useSignal, type Signal } from "./helpers.js";
 
 const render = async (e: JSX.Element) => {
   const html = e instanceof Promise ? await e : e;
@@ -43,21 +43,19 @@ describe("render interactive html", () => {
   });
 
   it("should increment textContent when button is clicked", async () => {
-    const Component = () => {
-      const signal = useSignal(0);
+    function Component(this: { signal: Signal<number> }) {
+      this.signal = useSignal(0);
+
       return (
         <button
-          onClick={handler(
-            (_, { signal }) => {
-              signal.value++;
-            },
-            { signal },
-          )}
+          onClick={handler(() => {
+            this.signal.value++;
+          })}
         >
-          {effect(({ signal }) => `${signal.value}`, { signal })}
+          {effect(() => `${this.signal.value}`)}
         </button>
       );
-    };
+    }
     await render(<Component />);
 
     const user = userEvent.setup();

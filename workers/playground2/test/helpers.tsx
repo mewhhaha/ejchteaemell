@@ -1,4 +1,4 @@
-import { annotate, into } from "playground/jsx-runtime";
+import { annotate, into, scopes } from "playground/jsx-runtime";
 import "./store.js";
 import { md5 } from "./md5.js";
 
@@ -11,10 +11,7 @@ declare global {
 const dynamicAssets = new Map<string, string>();
 window.dynamicAssets = dynamicAssets;
 
-export const handler = <T extends Record<string, unknown>>(
-  fn: (event: Event | undefined, deps: T) => void,
-  deps?: T,
-) => {
+export function handler(fn: (event: Event | undefined) => void) {
   const serialized = fn.toString();
 
   const hash = md5(serialized);
@@ -24,37 +21,40 @@ export const handler = <T extends Record<string, unknown>>(
     undefined,
     JSON.stringify({
       handler: hash,
-      dependencies: deps,
+      dependencies: scopes.at(-1),
     }),
   );
-};
+}
 
-export const effect = <
-  T extends Record<string, unknown> = Record<string, never>,
->(
-  fn: (deps: T) => unknown,
-  deps?: T,
-) => {
+export function effect(fn: () => unknown) {
+  const serialized = fn.toString();
+  const hash = md5(serialized);
+  dynamicAssets.set(hash, serialized);
+
+  const eff = JSON.stringify({
+    effect: hash,
+    dependencies: scopes.at(-1),
+  });
+
   async function* generator() {
-    const serialized = fn.toString();
-    const hash = md5(serialized);
-    dynamicAssets.set(hash, serialized);
-
     yield* `<!-- 
-innerHTML="${JSON.stringify({
-      effect: hash,
-      dependencies: deps,
-    })}";
+innerHTML="${eff}";
 -->`;
 
-    const result = fn(deps ?? ({} as T));
+    const result = fn();
     yield* (<>{result}</>).generator;
   }
 
   return into(generator());
+}
+
+export type Signal<T> = {
+  __isSignal: true;
+  id: string;
+  value: T;
 };
 
-export const useSignal = <T,>(value: T) => {
+export const useSignal = <T,>(value: T): Signal<T> => {
   return {
     __isSignal: true,
     id: crypto.randomUUID(),

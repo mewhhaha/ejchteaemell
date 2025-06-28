@@ -45,16 +45,16 @@ const isAnnotation = (value: unknown): value is Annotation<unknown> => {
   );
 };
 
-export const scopes: string[] = [];
+export const scopes: unknown[] = [];
 
 export function jsx(
   tag: string | Function,
   { children, ...props }: { children?: unknown } & Record<string, any>,
 ): Html {
   if (typeof tag === "function") {
-    const id = crypto.randomUUID();
-    scopes.push(id);
-    const result = tag({ children, ...props });
+    const context = {};
+    scopes.push(context);
+    const result = tag.bind(context)({ children, ...props });
     scopes.pop();
 
     return result;
